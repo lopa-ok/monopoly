@@ -66,6 +66,89 @@ var Game = (function() {
     updateByID("currentTurn", game.players[game.currentPlayer].name);
   };
 
+  game.startAuction = function(squareID) {
+    var square = this.squares.find(s => s.squareID === squareID);
+    if (square.owner === "For Sale") {
+        var highestBid = 0;
+        var highestBidder = null;
+
+        game.players.forEach(function(player) {
+            var bid = prompt(player.name + ", enter your bid for " + square.name + " (Current highest: $" + highestBid + "):");
+            if (bid && bid > highestBid) {
+                highestBid = bid;
+                highestBidder = player;
+            }
+        });
+
+        if (highestBidder) {
+            highestBidder.cash -= highestBid;
+            square.owner = highestBidder.id;
+
+            updateByID(highestBidder.id + "-info_cash", highestBidder.cash);
+            updateByID(squareID + "-owner", "Owner: " + highestBidder.name);
+            updateByID("messagePara", highestBidder.name + " won the auction for " + square.name + " with a bid of $" + highestBid);
+        } else {
+            updateByID("messagePara", "No bids placed for " + square.name);
+        }
+    } else {
+        updateByID("messagePara", "This property is not up for auction.");
+    }
+};
+
+
+game.tradeProperty = function(playerFrom, playerTo, squareID, cashOffer) {
+  var square = this.squares.find(s => s.squareID === squareID);
+  if (square.owner === playerFrom.id && playerTo.cash >= cashOffer) {
+      square.owner = playerTo.id;
+      playerFrom.cash += cashOffer;
+      playerTo.cash -= cashOffer;
+
+      updateByID(playerFrom.id + "-info_cash", playerFrom.cash);
+      updateByID(playerTo.id + "-info_cash", playerTo.cash);
+      updateByID(squareID + "-owner", "Owner: " + playerTo.name);
+      updateByID("messagePara", playerTo.name + " bought " + square.name + " from " + playerFrom.name + " for $" + cashOffer);
+  } else {
+      updateByID("messagePara", "Trade cannot be completed. Either the property is not owned by " + playerFrom.name + " or " + playerTo.name + " doesn't have enough cash.");
+  }
+};
+
+
+game.buyHouseOrHotel = function(player, squareID) {
+  var square = this.squares.find(s => s.squareID === squareID);
+  if (square.owner === player.id) {
+      var cost = square.value * 0.5;
+      if (player.cash >= cost) {
+          square.houses = (square.houses || 0) + 1;
+          player.cash -= cost;
+
+          updateByID(player.id + "-info_cash", player.cash);
+          updateByID(squareID + "-houses", square.houses + " houses");
+          updateByID("messagePara", player.name + " bought a house on " + square.name);
+      } else {
+          updateByID("messagePara", player.name + " doesn't have enough cash to buy a house.");
+      }
+  } else {
+      updateByID("messagePara", player.name + " doesn't own this property.");
+  }
+};
+
+
+game.mortgageProperty = function(player, squareID) {
+  var square = this.squares.find(s => s.squareID === squareID);
+  if (square.owner === player.id) {
+      var mortgageValue = square.value / 2;
+      player.cash += mortgageValue;
+      square.isMortgaged = true;
+
+      updateByID(player.id + "-info_cash", player.cash);
+      updateByID(squareID + "-owner", "Owner: Mortgaged by " + player.name);
+      updateByID("messagePara", player.name + " mortgaged " + square.name + " for $" + mortgageValue);
+  } else {
+      updateByID("messagePara", player.name + " doesn't own this property.");
+  }
+};
+
+
   function movePlayer() {
     var moves = Math.floor(Math.random() * 4) + 1;
     var totalSquares = game.squares.length;
