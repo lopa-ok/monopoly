@@ -1,0 +1,80 @@
+/* General resets */
+div {
+  margin: 0;
+  padding: 0;
+}
+
+/* Game board styling */
+.game_board {
+  width: 60em;
+  height: 48em;
+  background-color: #f5f5f5; /* Light gray background for the board */
+  border: 2px solid #ccc; /* Light border around the board */
+  display: table;
+}
+
+/* Rows of the game board */
+.row {
+  background-color: #e0f7fa; /* Light cyan background for rows */
+  height: 12em;
+  display: table-row;
+}
+
+/* Cells of the game board */
+.cell {
+  border: 1px solid #fff; /* White border around cells */
+  background-color: #b3e5fc; /* Light blue background for cells */
+  display: table-cell;
+  width: 12em;
+  height: 12em;
+  text-align: center;
+  vertical-align: middle; /* Center text vertically */
+  padding: 1em; /* Padding around cell content */
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+/* Square name styling */
+.square-name {
+  font-weight: bold;
+  color: #0277bd; /* Darker blue for square names */
+}
+
+/* Additional areas */
+.middle, .info {
+  background-color: #fff; /* White background for info and middle areas */
+}
+
+/* Tokens styling */
+.Triangle {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-bottom: 40px solid #0288d1; /* Darker blue for triangle tokens */
+}
+
+.Circle {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  background: #0288d1; /* Darker blue for circle tokens */
+  border-radius: 50%; /* Perfectly round shape */
+}
+
+#player1-info_token {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 20px solid #0288d1; /* Darker blue for player 1 token */
+}
+
+#player2-info_token {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  background: #0288d1; /* Darker blue for player 2 token */
+  border-radius: 50%; /* Perfectly round shape */
+}
