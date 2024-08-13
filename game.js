@@ -95,6 +95,52 @@ var Game = (function() {
     }
 };
 
+game.sendToJail = function(player) {
+  player.currentSquare = "jailSquare";
+  player.inJail = true;
+  updateByID("messagePara", player.name + " has been sent to jail!");
+};
+
+game.rollForJailRelease = function(player) {
+  var dice1 = Math.floor(Math.random() * 6) + 1;
+  var dice2 = Math.floor(Math.random() * 6) + 1;
+  if (dice1 === dice2) {
+      player.inJail = false;
+      updateByID("messagePara", player.name + " rolled doubles and is released from jail!");
+  } else {
+      player.updateCash(player.cash - 50);
+      updateByID("messagePara", player.name + " failed to roll doubles and paid $50 to get out of jail.");
+      player.inJail = false;
+  }
+};
+
+
+function movePlayer() {
+  var currentPlayer = game.players[game.currentPlayer];
+  if (currentPlayer.inJail) {
+      game.rollForJailRelease(currentPlayer);
+      if (currentPlayer.inJail) return;
+  }
+
+  var moves = Math.floor(Math.random() * 4) + 1;
+  var totalSquares = game.squares.length + 1;
+  var currentSquareIndex = parseInt(currentPlayer.currentSquare.slice(6));
+
+  var nextSquareIndex = (currentSquareIndex + moves) % totalSquares;
+  if (nextSquareIndex < currentSquareIndex) {
+      currentPlayer.updateCash(currentPlayer.cash + 100);
+      console.log("$100 for passing start");
+  }
+
+  currentPlayer.currentSquare = "square" + nextSquareIndex;
+  var currentToken = document.getElementById(currentPlayer.id);
+  currentToken.parentNode.removeChild(currentToken);
+  currentPlayer.createToken(document.getElementById(currentPlayer.currentSquare));
+
+  if (currentPlayer.currentSquare === "jailSquare") {
+      game.sendToJail(currentPlayer);
+  }
+}
 
 game.tradeProperty = function(playerFrom, playerTo, squareID, cashOffer) {
   var square = this.squares.find(s => s.squareID === squareID);
@@ -211,6 +257,87 @@ game.mortgageProperty = function(player, squareID) {
       owner.updateCash(owner.cash + currentSquareObj.rent);
     }
   }
+  game.updateLeaderboard = function() {
+    var leaderboard = game.players.map(player => {
+        var properties = game.squares.filter(s => s.owner === player.id);
+        var propertyValue = properties.reduce((total, p) => total + p.value, 0);
+        var netWorth = player.cash + propertyValue;
+        return { name: player.name, netWorth: netWorth };
+    });
+
+    leaderboard.sort((a, b) => b.netWorth - a.netWorth);
+
+    var leaderboardHTML = leaderboard.map(player => `<li>${player.name}: $${player.netWorth}</li>`).join('');
+    updateByID("leaderboard", `<ul>${leaderboardHTML}</ul>`);
+};
+game.checkBankruptcy = function(player) {
+  if (player.cash < 0) {
+      alert(player.name + " is bankrupt!");
+      game.players = game.players.filter(p => p.id !== player.id);
+
+      
+      game.squares.forEach(square => {
+          if (square.owner === player.id) {
+              square.owner = "For Sale";
+              updateByID(square.squareID + "-owner", "For Sale");
+          }
+      });
+
+      
+      game.updateLeaderboard();
+
+      if (game.players.length === 1) {
+          alert(game.players[0].name + " is the winner!");
+      }
+  }
+};
+
+game.takeTurn = function() {
+  movePlayer();
+  checkTile();
+
+  game.checkBankruptcy(game.players[game.currentPlayer]);
+
+  game.currentPlayer = (game.currentPlayer + 1) % game.players.length;
+  updateByID("currentTurn", game.players[game.currentPlayer].name);
+};
+game.drawCard = function(deck) {
+  var card = deck[Math.floor(Math.random() * deck.length)];
+  card.action(game.players[game.currentPlayer]);
+  updateByID("messagePara", card.text);
+};
+
+game.chanceCards = [
+  {
+      text: "Advance to Go (Collect $200)",
+      action: function(player) {
+          player.currentSquare = "square1";
+          player.updateCash(player.cash + 200);
+          player.createToken(document.getElementById(player.currentSquare));
+      }
+  },
+  {
+      text: "Bank error in your favor – Collect $75",
+      action: function(player) {
+          player.updateCash(player.cash + 75);
+      }
+  }
+];
+
+game.communityChestCards = [
+  {
+      text: "Doctor's fees – Pay $50",
+      action: function(player) {
+          player.updateCash(player.cash - 50);
+      }
+  },
+  {
+      text: "You inherit $100",
+      action: function(player) {
+          player.updateCash(player.cash + 100);
+      }
+  }
+];
 
   function handleBankruptcy() {
     var currentPlayer = game.players[game.currentPlayer];
